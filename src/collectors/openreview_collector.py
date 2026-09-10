@@ -88,16 +88,3 @@ def collect_all_venues():
         all_papers.extend(papers)
 
     return all_papers
-
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("  OpenReview 采集器测试")
-    print("=" * 60)
-    papers = collect_all_venues()
-    if papers:
-        print(f"\n  总计: {len(papers)} 篇")
-        for p in papers[:5]:
-            print(f"    [{p['venue']}] {p['title'][:55]}")
-    else:
-        print("  未获取到论文（可能需要检查 venue ID）")

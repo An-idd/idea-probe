@@ -50,12 +50,3 @@ def collect_paper_digest():
         print(f"    ❌ 失败: {e}")
 
     return articles
-
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("  Paper Digest 采集器测试")
-    print("=" * 60)
-    articles = collect_paper_digest()
-    for a in articles[:10]:
-        print(f"  {a['title'][:60]}")

@@ -1,14 +1,13 @@
 """RSS 源采集器 - 白色，覆盖量子位/Leiphone/MarkTechPost/VentureBeat等"""
 
 import feedparser
-import json
 from datetime import datetime
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from api_retry import http_get  # noqa: E402
-from config.settings import RSS_FEEDS, CANDIDATES_DIR
+from config.settings import RSS_FEEDS
 
 
 def collect_from_feed(name, url):
@@ -57,27 +56,3 @@ def collect_all_feeds():
             all_articles.extend(articles)
 
     return all_articles, results_summary
-
-
-def save_results(articles):
-    output_file = CANDIDATES_DIR / f"rss_{datetime.now().strftime('%Y%m%d')}.json"
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(articles, f, ensure_ascii=False, indent=2)
-    print(f"  [RSS] 保存 {len(articles)} 篇到 {output_file}")
-    return output_file
-
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("RSS 源采集器测试")
-    print("=" * 60)
-    articles, summary = collect_all_feeds()
-    if articles:
-        save_results(articles)
-        print(f"\n  总计: {len(articles)} 篇")
-        print("\n  各源状态:")
-        for name, status in summary.items():
-            print(f"    {name}: {status}")
-    else:
-        print("  未获取到任何文章")

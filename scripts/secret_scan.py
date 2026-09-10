@@ -237,7 +237,7 @@ def main() -> int:
     for path in iter_files(root):
         for finding in scan_file(path):
             file_path, line_no, rule_name, digest = finding
-            rel = str(file_path.relative_to(root) if file_path.is_relative_to(root) else file_path)
+            rel = (file_path.relative_to(root) if file_path.is_relative_to(root) else file_path).as_posix()
             index = next(
                 (i for i, entry in enumerate(allowlist)
                  if entry.get("path") == rel

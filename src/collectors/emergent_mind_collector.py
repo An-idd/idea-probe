@@ -28,7 +28,7 @@ def collect_emergent_mind():
             print(f"    ❌ HTTP {resp.status_code}")
             return articles
 
-        soup = BeautifulSoup(resp.text, "lxml")
+        soup = BeautifulSoup(resp.text, "html.parser")
         paper_links = soup.find_all("a", href=True)
 
         for link in paper_links:
@@ -65,12 +65,3 @@ def collect_emergent_mind():
         print(f"    ❌ 失败: {e}")
 
     return articles
-
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("  Emergent Mind 采集器测试")
-    print("=" * 60)
-    articles = collect_emergent_mind()
-    for a in articles[:10]:
-        print(f"  {a['title'][:60]}")

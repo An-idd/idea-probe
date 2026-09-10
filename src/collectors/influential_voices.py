@@ -1,22 +1,6 @@
-"""
-大佬声音追踪器
-追踪 AI 界有影响力的人物公开支持/点赞的内容
-
-渠道:
-1. AK (@_akhaliq) - HuggingFace 每日策展
-2. Karpathy - 博客/YouTube
-3. 顶会 Best Paper / Oral / Spotlight
-4. AI Lab 研究博客 (OpenAI, DeepMind, Anthropic, Meta AI)
-5. 知名研究者个人博客 (Lilian Weng, Sebastian Raschka, Jay Alammar 等)
-
-由于 Twitter/X 需要付费，这里用可获取的公开替代源:
-- HuggingFace Papers（AK 策展）的高票子集
-- 研究者博客 RSS
-- 顶会官方公布
-"""
+"""Collect research blogs and conference discussions as optional background evidence."""
 
 import feedparser
-import json
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -25,7 +9,6 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from api_retry import http_get  # noqa: E402
-from config.settings import CANDIDATES_DIR
 
 
 # ============================================================
@@ -204,7 +187,7 @@ def collect_conference_highlights():
             "limit": 10,
             "restrict_sr": "true",
         }
-        headers = {"User-Agent": "AutoResearch/0.1"}
+        headers = {"User-Agent": "IdeaProbe/0.1"}
         try:
             resp = http_get(url, params=params, headers=headers, timeout=15, follow_redirects=True)
             if resp.status_code == 200:
@@ -239,132 +222,3 @@ def collect_conference_highlights():
     unique.sort(key=lambda x: x.get("score", 0), reverse=True)
     print(f"    找到 {len(unique)} 个顶会相关热议帖")
     return unique[:15]
-
-
-# ============================================================
-# 3. HuggingFace Papers 中 AK 策展 + 顶级作者的论文
-# ============================================================
-def collect_ak_curated(days_back=7):
-    """
-    AK 策展的 HuggingFace Papers 中，只取那些:
-    - 被 AK 本人提交的（submittedBy 包含 akhaliq）
-    - 或来自知名机构的
-    不看 upvotes（不可靠），看提交者身份
-    """
-    print("\n  --- AK 策展 (HuggingFace) ---")
-    sys.path.insert(0, str(Path(__file__).parent))
-    from hf_papers_collector import collect_daily_papers
-
-    all_papers = collect_daily_papers(days_back=days_back)
-    ak_curated = []
-
-    for paper in all_papers:
-        submitted_by = paper.get("submitted_by", "").lower()
-        # AK 本人提交的
-        if "akhaliq" in submitted_by or "ak" == submitted_by:
-            paper["source_type"] = "ak_curated"
-            paper["curation_signal"] = "AK 本人提交"
-            ak_curated.append(paper)
-
-    print(f"    AK 本人提交: {len(ak_curated)} 篇（近{days_back}天）")
-    return ak_curated
-
-
-# ============================================================
-# 4. 储备池机制
-# ============================================================
-def load_reserve_pool():
-    """加载储备池"""
-    reserve_file = CANDIDATES_DIR / "reserve_pool.json"
-    if reserve_file.exists():
-        with open(reserve_file) as f:
-            return json.load(f)
-    return []
-
-
-def save_to_reserve_pool(items):
-    """保存到储备池（追加模式）"""
-    reserve_file = CANDIDATES_DIR / "reserve_pool.json"
-    existing = load_reserve_pool()
-
-    # 去重
-    existing_titles = {item["title"] for item in existing}
-    new_items = [item for item in items if item.get("title") not in existing_titles]
-
-    for item in new_items:
-        item["added_to_reserve"] = datetime.now().isoformat()
-        item["check_again_after"] = (datetime.now() + timedelta(days=14)).isoformat()
-
-    existing.extend(new_items)
-    with open(reserve_file, "w", encoding="utf-8") as f:
-        json.dump(existing, f, ensure_ascii=False, indent=2)
-
-    print(f"    储备池: +{len(new_items)} 新增, 总计 {len(existing)} 条")
-    return existing
-
-
-def check_reserve_matured():
-    """检查储备池中哪些已经过了观察期（2周），可以重新评估"""
-    reserve = load_reserve_pool()
-    now = datetime.now()
-    matured = []
-    for item in reserve:
-        check_after = item.get("check_again_after", "")
-        if check_after:
-            try:
-                check_date = datetime.fromisoformat(check_after)
-                if now >= check_date:
-                    matured.append(item)
-            except Exception:  # noqa: BLE001 - keep collecting on any single-source failure
-                pass
-    return matured
-
-
-# ============================================================
-# 主入口
-# ============================================================
-def collect_all_influential():
-    """采集所有大佬/权威渠道"""
-    results = {
-        "blogs": [],
-        "conferences": [],
-        "ak_curated": [],
-    }
-
-    results["blogs"] = collect_research_blogs(max_days=30)
-    results["conferences"] = collect_conference_highlights()
-    results["ak_curated"] = collect_ak_curated(days_back=7)
-
-    # 合并
-    all_items = results["blogs"] + results["conferences"] + results["ak_curated"]
-
-    # 保存
-    output_file = CANDIDATES_DIR / f"influential_{datetime.now().strftime('%Y%m%d')}.json"
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(all_items, f, ensure_ascii=False, indent=2)
-
-    print(f"\n  大佬/权威渠道总计: {len(all_items)} 条")
-    print(f"    博客: {len(results['blogs'])}")
-    print(f"    顶会: {len(results['conferences'])}")
-    print(f"    AK策展: {len(results['ak_curated'])}")
-    print(f"  保存到: {output_file}")
-
-    return all_items, results
-
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("  大佬/权威渠道采集器测试")
-    print("=" * 60)
-    all_items, results = collect_all_influential()
-
-    if results["blogs"]:
-        print("\n  博客文章示例:")
-        for b in results["blogs"][:5]:
-            print(f"    [{b['blog_name']}] {b['title'][:50]}")
-
-    if results["conferences"]:
-        print("\n  顶会热议示例:")
-        for c in results["conferences"][:5]:
-            print(f"    [{c['score']}↑ {c['num_comments']}评] {c['title'][:50]}")

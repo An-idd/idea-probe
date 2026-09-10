@@ -1,0 +1,11 @@
+IdeaProbe
+Maintained by MaKik.
+
+This project derives portions of its collectors, HTTP retry utilities and source
+normalization from AutoResearch (https://github.com/EvoMap/AutoResearch).
+The upstream authors and citation are preserved in docs/UPSTREAM_CITATION.cff.
+The original Apache License 2.0 is preserved in LICENSE.
+
+The local Codex project-research workflow and standalone project restructuring
+were developed for IdeaProbe in 2026. Upstream academic idea generation, Forge,
+experiment runtime and dashboards have been removed from this distribution.

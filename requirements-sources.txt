@@ -1,0 +1,5 @@
+# Optional academic/media sources.
+-r requirements.txt
+feedparser>=6.0
+arxiv>=2.1
+openreview-py>=1.44

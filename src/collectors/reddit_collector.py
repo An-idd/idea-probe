@@ -1,9 +1,4 @@
-"""Reddit 采集器 - r/MachineLearning 与 r/LocalLLaMA 的研究讨论帖。
-
-原来内联在 `src/pipeline_v4.py` 里，与另外 10 个采集器形态不一致，于是「加一个渠道」
-没有唯一的落点，而且它没法单独测（要覆盖 run_pipeline_v4 只能把 collect_all_channels
-整个 monkeypatch 掉）。搬过来只是移动，行为逐字不变（#24）。
-"""
+"""Search public Reddit discussions for developer problems."""
 
 import sys
 from pathlib import Path
@@ -66,7 +61,7 @@ def _is_reddit_self_url(url):
     return parsed.scheme == "https" and parsed.hostname == "www.reddit.com"
 
 
-def search_reddit_research(subreddit, query, time_filter="month", limit=50):
+def search_reddit_research(subreddit, query, time_filter="month", limit=50, *, strict=False, include_metadata=False):
     """在 Reddit 搜索研究相关帖子（看近1个月）"""
     url = f"https://www.reddit.com/r/{subreddit}/search.json"
     params = {
@@ -81,6 +76,8 @@ def search_reddit_research(subreddit, query, time_filter="month", limit=50):
     try:
         resp = http_get(url, params=params, headers=headers, timeout=20)
         if resp.status_code != 200:
+            if strict:
+                resp.raise_for_status()
             print(f"  [Reddit/{subreddit}] HTTP {resp.status_code}")
             return []
         data = resp.json()
@@ -104,49 +101,10 @@ def search_reddit_research(subreddit, query, time_filter="month", limit=50):
                 "summary": post.get("selftext") or "",
                 "author": post.get("author", ""),
             })
+            if include_metadata:
+                results[-1]["created_utc"] = post.get("created_utc")
     except Exception as e:
+        if strict:
+            raise
         print(f"  [Reddit/{subreddit}] 失败: {e}")
     return results
-
-
-def get_reddit_hot_research(time_filter="month"):
-    """获取近1个月内有真实技术讨论的研究帖
-重点: 评论数要高（说明真的有人在讨论）"""
-    all_posts = []
-    seen_urls = set()
-    seen_titles = set()
-
-    # r/MachineLearning
-    ml_queries = [
-        "paper OR research OR method OR architecture",
-        "benchmark OR evaluation OR training trick",
-    ]
-    for q in ml_queries:
-        posts = search_reddit_research("MachineLearning", q, time_filter=time_filter)
-        for p in posts:
-            u = p.get("url", "")
-            t = p.get("title", "")
-            if (u and u in seen_urls) or (t and t in seen_titles):
-                continue
-            if u:
-                seen_urls.add(u)
-            if t:
-                seen_titles.add(t)
-            all_posts.append(p)
-
-    # r/LocalLLaMA
-    local_posts = search_reddit_research(
-        "LocalLLaMA", "research OR paper OR method OR technique", time_filter=time_filter
-    )
-    for p in local_posts:
-        u = p.get("url", "")
-        t = p.get("title", "")
-        if (u and u in seen_urls) or (t and t in seen_titles):
-            continue
-        if u:
-            seen_urls.add(u)
-        if t:
-            seen_titles.add(t)
-        all_posts.append(p)
-
-    return all_posts

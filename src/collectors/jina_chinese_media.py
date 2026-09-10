@@ -172,13 +172,3 @@ def collect_chinese_media(first_run=False):
         all_articles.extend(articles)
 
     return all_articles
-
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("  中文AI媒体采集器 (Jina Reader) 测试")
-    print("=" * 60)
-    articles = collect_chinese_media()
-    print(f"\n  总计: {len(articles)} 篇")
-    for a in articles[:10]:
-        print(f"    [{a['source_name']}] {a['title'][:50]}")

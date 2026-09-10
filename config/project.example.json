@@ -1,0 +1,61 @@
+{
+  "project_research": {
+    "enabled": true,
+    "lookback_days": 30,
+    "max_signals": 200,
+    "max_problems": 30,
+    "max_ideas": 20,
+    "top_k": 5,
+    "min_independent_evidence": 2,
+    "batch_size": 10,
+    "topic": "",
+    "profile_path": "",
+    "required_sources": [],
+    "subreddits": [
+      "LocalLLaMA",
+      "selfhosted",
+      "opensource",
+      "Python"
+    ],
+    "queries": [
+      "developer tools",
+      "workaround",
+      "alternative",
+      "Ask HN"
+    ],
+    "knowledge_directions": [],
+    "max_comments": 5,
+    "max_competitor_pages": 3,
+    "max_document_chars": 6000,
+    "max_evidence_documents": 30,
+    "codex": {
+      "executable": "codex",
+      "models": [],
+      "timeout_seconds": 300,
+      "attempts": 2,
+      "max_concurrency": 1,
+      "reasoning_effort": ""
+    },
+    "roles": {
+      "project_ideator": [],
+      "project_validator": [],
+      "project_brief_writer": [],
+      "project_red_team": []
+    },
+    "red_team": {
+      "enabled": true,
+      "top_k": 3
+    },
+    "decision_thresholds": {
+      "go": 75,
+      "hold": 60
+    },
+    "sources": {
+      "github": true,
+      "hackernews": true,
+      "reddit": true,
+      "academic": false,
+      "media": false
+    }
+  }
+}

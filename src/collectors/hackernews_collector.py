@@ -1,8 +1,4 @@
-"""Hacker News 采集器 - Algolia API 上近 N 天的 AI 高讨论帖。
-
-原来内联在 `src/pipeline_v4.py` 里。同名文件曾经存在过一份无人引用的第二实现，已在
-#23 删除；这一份是把真正在跑的那段搬过来，行为逐字不变（#24）。
-"""
+"""Search Hacker News discussions through the Algolia API."""
 
 import time
 import sys
@@ -13,10 +9,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from api_retry import http_get  # noqa: E402
 
 
-def get_hn_discussed(time_filter_days=30):
+def get_hn_discussed(time_filter_days=30, *, queries=None, min_comments=20, include_content=False, strict=False):
     """从 HN Algolia API 获取近 N 天内 AI 高讨论帖"""
     cutoff_ts = int(time.time()) - time_filter_days * 86400
-    queries = [
+    queries = queries if queries is not None else [
         "LLM",
         "machine learning",
         "neural network",
@@ -33,7 +29,7 @@ def get_hn_discussed(time_filter_days=30):
             params = {
                 "query": q,
                 "tags": "story",
-                "numericFilters": f"num_comments>20,created_at_i>{cutoff_ts}",
+                "numericFilters": f"num_comments>{min_comments},created_at_i>{cutoff_ts}",
                 "hitsPerPage": 30,
             }
             resp = http_get(
@@ -42,6 +38,8 @@ def get_hn_discussed(time_filter_days=30):
                 timeout=20,
             )
             if resp.status_code != 200:
+                if strict:
+                    resp.raise_for_status()
                 continue
             hits = resp.json().get("hits", [])
             for hit in hits:
@@ -58,7 +56,13 @@ def get_hn_discussed(time_filter_days=30):
                     "num_comments": hit.get("num_comments", 0) or 0,
                     "summary": "",
                 })
+                if include_content:
+                    results[-1].update(summary=hit.get("story_text") or "",
+                                       author=hit.get("author") or "",
+                                       published_at=hit.get("created_at") or "")
         except Exception as e:
+            if strict:
+                raise
             print(f"  [HN/{q}] 失败: {e}")
             continue
 

@@ -1,14 +1,12 @@
 """GitHub Trending 采集器 - 白色，HTML 解析"""
 
 from bs4 import BeautifulSoup
-import json
 from datetime import datetime
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from api_retry import http_get  # noqa: E402
-from config.settings import CANDIDATES_DIR
 
 AI_KEYWORDS = [
     "llm", "gpt", "transformer", "diffusion", "attention",
@@ -19,19 +17,21 @@ AI_KEYWORDS = [
 ]
 
 
-def collect_trending(since="daily"):
+def collect_trending(since="daily", *, keywords=AI_KEYWORDS, strict=False):
     """采集 GitHub Trending ML/AI 相关项目"""
     repos = []
     url = f"https://github.com/trending?since={since}"
-    headers = {"User-Agent": "Mozilla/5.0 AutoResearch/0.1"}
+    headers = {"User-Agent": "Mozilla/5.0 IdeaProbe/0.1"}
 
     try:
         resp = http_get(url, headers=headers, timeout=15)
         if resp.status_code != 200:
+            if strict:
+                resp.raise_for_status()
             print(f"  [GitHub] HTTP {resp.status_code}")
             return repos
 
-        soup = BeautifulSoup(resp.text, "lxml")
+        soup = BeautifulSoup(resp.text, "html.parser")
         articles = soup.find_all("article", class_="Box-row")
 
         for article in articles:
@@ -53,7 +53,7 @@ def collect_trending(since="daily"):
                 stars_today = stars_span.get_text(strip=True)
 
             full_text = (repo_name + " " + description).lower()
-            is_ai = any(kw in full_text for kw in AI_KEYWORDS)
+            is_ai = keywords is None or any(kw in full_text for kw in keywords)
             if not is_ai:
                 continue
 
@@ -70,29 +70,8 @@ def collect_trending(since="daily"):
 
         print(f"  [GitHub] Trending ({since}): 扫描 {len(articles)} 项目，AI 相关 {len(repos)} 个")
     except Exception as e:
+        if strict:
+            raise
         print(f"  [GitHub] 失败: {e}")
 
     return repos
-
-
-def save_results(repos):
-    output_file = CANDIDATES_DIR / f"github_trending_{datetime.now().strftime('%Y%m%d')}.json"
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(repos, f, ensure_ascii=False, indent=2)
-    print(f"  [GitHub] 保存 {len(repos)} 个项目到 {output_file}")
-    return output_file
-
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("GitHub Trending 采集器测试")
-    print("=" * 60)
-    repos = collect_trending("daily")
-    if repos:
-        save_results(repos)
-        print("\n  AI 热门项目:")
-        for r in repos[:5]:
-            print(f"    {r['repo']}: {r['description'][:50]}... ({r['stars_today']})")
-    else:
-        print("  当前 trending 未找到 AI 相关项目（或解析问题）")

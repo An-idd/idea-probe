@@ -4,8 +4,6 @@ import httpx
 import pytest
 
 import api_retry
-import llm_client
-import providers
 
 
 def test_exception_retries_share_one_attempt_budget():
@@ -79,86 +77,3 @@ def test_http_does_not_retry_non_transport_exceptions():
         )
 
     assert len(calls) == 1
-
-
-def test_provider_dispatch_defaults_to_three_attempts(monkeypatch):
-    config = {
-        "profiles": {
-            "m": {
-                "api": "openai_chat",
-                "base_url": "https://example.invalid",
-                "api_key": "secret",
-                "model": "m",
-            },
-        },
-    }
-    calls = []
-    monkeypatch.setattr(api_retry.time, "sleep", lambda _delay: None)
-    monkeypatch.setattr(
-        providers,
-        "send",
-        lambda _wire, _dialect: calls.append(1)
-        or providers.Reply(providers.REMOTE_ERROR, http_status=503),
-    )
-
-    reply = providers.dispatch(config, "m", "hello")
-
-    assert len(calls) == 3
-    assert len(reply.attempts) == 3
-
-
-def test_provider_attempts_can_be_set_per_profile(monkeypatch):
-    config = {
-        "version": 2,
-        "endpoints": {
-            "gateway": {
-                "dialect": "openai_chat",
-                "base_url": "https://example.invalid",
-                "credential_env": ["TEST_API_KEY"],
-                "retry_attempts": 2,
-                "retry_delay_seconds": 0,
-            },
-        },
-        "models": {
-            "m": {
-                "routes": [{"endpoint": "gateway", "wire_name": "m"}],
-            },
-        },
-    }
-    calls = []
-    monkeypatch.setattr(
-        providers,
-        "send",
-        lambda _wire, _dialect: calls.append(1)
-        or providers.Reply(providers.UNREACHABLE),
-    )
-
-    providers.dispatch(config, "m", "hello", env={"TEST_API_KEY": "secret"})
-
-    assert len(calls) == 2
-
-
-def test_model_call_can_override_attempts(monkeypatch):
-    config = {
-        "profiles": {
-            "m": {
-                "api": "openai_chat",
-                "base_url": "https://example.invalid",
-                "api_key": "secret",
-                "model": "m",
-                "retry_delay_seconds": 0,
-            },
-        },
-    }
-    calls = []
-    monkeypatch.setattr(
-        providers,
-        "send",
-        lambda _wire, _dialect: calls.append(1)
-        or providers.Reply(providers.UNREACHABLE),
-    )
-
-    with pytest.raises(llm_client.ModelUnreachable):
-        llm_client.call_model("m", "hello", _config=config, attempts=2)
-
-    assert len(calls) == 2
