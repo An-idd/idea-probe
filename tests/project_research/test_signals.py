@@ -6,7 +6,7 @@ import pytest
 
 import channels
 from project_research import signals
-from project_research.config import ProjectConfig
+from project_research.config import ProjectConfig, Sources
 
 
 def test_github_normalization_and_thread_identity():
@@ -32,7 +32,7 @@ def test_github_fetch_uses_standard_html_parser(monkeypatch):
 
 
 def test_collect_source_selection_and_failure(monkeypatch):
-    config = ProjectConfig(max_comments=0)
+    config = ProjectConfig(topic="observability", max_comments=0, sources=Sources(github=True, reddit=True))
     roster = signals.project_channels(config)
     assert {c.key for c in roster} == {"github_trending", "reddit", "hackernews"}
     assert not any(c.required for c in roster)
@@ -52,17 +52,30 @@ def test_collect_source_selection_and_failure(monkeypatch):
 def test_failed_sources_are_not_empty_success(monkeypatch):
     monkeypatch.setattr(channels, "collect", lambda *a: (_ for _ in ()).throw(RuntimeError("offline")))
     with pytest.raises(RuntimeError, match="No source completed"):
-        signals.collect_signals(ProjectConfig())
+        signals.collect_signals(ProjectConfig(topic="observability"))
 
 
 def test_custom_queries_and_subreddits():
-    config = ProjectConfig(subreddits=["golang"], queries=["workaround"], topic="observability")
+    config = ProjectConfig(subreddits=["golang"], queries=["workaround"], topic="observability",
+                           sources=Sources(reddit=True))
     calls = []
     reddit = next(c for c in signals.project_channels(config) if c.key == "reddit")
     module = SimpleNamespace(search_reddit_research=lambda *a, **kw: calls.append((a, kw)) or [])
     reddit.fetch(module, channels.Window())
     assert [a[0][0] for a in calls] == ["golang", "golang"]
     assert all(a[1]["strict"] for a in calls)
+
+
+def test_default_collection_stays_on_the_users_topic():
+    config = ProjectConfig(topic="agent context")
+    roster = signals.project_channels(config)
+    assert [c.key for c in roster] == ["hackernews"]
+    calls = []
+    module = SimpleNamespace(get_hn_discussed=lambda *a, **kw: calls.append(kw) or [])
+    roster[0].fetch(module, channels.Window())
+    assert calls[0]["queries"] == ["agent context"]
+    with pytest.raises(ValueError, match="Provide --topic"):
+        signals.project_channels(ProjectConfig())
 
 
 def test_reddit_uses_discussion_url_and_time_metadata():

@@ -1,4 +1,4 @@
-"""Lazy source registry for community and optional background evidence."""
+"""Lazy source registry for focused developer idea research."""
 from __future__ import annotations
 
 import importlib
@@ -10,8 +10,6 @@ from typing import Any, Callable
 class Window:
     time_filter: str = "month"
     time_filter_days: int = 30
-    arxiv_days: int = 7
-    hf_days: int = 7
 
 
 @dataclass(frozen=True)
@@ -32,19 +30,6 @@ CHANNELS = (
             lambda m, w: m.get_hn_discussed(time_filter_days=w.time_filter_days)),
     Channel("github_trending", "community", "github_trending_collector",
             lambda m, w: m.collect_trending(since=GITHUB_SINCE.get(w.time_filter, "monthly"))),
-    Channel("arxiv", "academic", "arxiv_collector",
-            lambda m, w: m.collect_recent_papers(days_back=w.arxiv_days, max_per_category=20)),
-    Channel("hf_papers", "academic", "hf_papers_collector",
-            lambda m, w: m.collect_daily_papers(days_back=w.hf_days)),
-    Channel("emergent_mind", "academic", "emergent_mind_collector", lambda m, w: m.collect_emergent_mind()),
-    Channel("paper_digest", "academic", "paper_digest_collector", lambda m, w: m.collect_paper_digest()),
-    Channel("rss", "media", "rss_collector", lambda m, w: m.collect_all_feeds()[0]),
-    Channel("influential_voices", "academic", "influential_voices",
-            lambda m, w: {"blogs": m.collect_research_blogs(max_days=w.time_filter_days),
-                          "conferences": m.collect_conference_highlights()}),
-    Channel("openreview", "academic", "openreview_collector", lambda m, w: m.collect_all_venues()),
-    Channel("jina_chinese_media", "media", "jina_chinese_media",
-            lambda m, w: m.collect_chinese_media(first_run=False)),
 )
 
 

@@ -27,8 +27,9 @@ The example's full budget can require many Codex calls. See the [real-run evalua
 
 Signals → screening → problems → deduplication → ideas → evidence → validation → ranking → optional Red Team → briefs.
 
-- Default sources: Hacker News, Reddit and GitHub Trending.
-- Optional academic/media background sources require `pip install -r requirements-sources.txt`.
+- Default source: Hacker News, searched using your `--topic` and optional explicit `queries`.
+- Reddit and GitHub Trending require explicit opt-in. Bulk academic, news and blog collectors have been removed.
+- See the [source strategy](docs/PROJECT_SOURCE_STRATEGY.md) for the existing-idea focus and proposed additions.
 - [ProjectProfile.md](ProjectProfile.md) describes your skills, constraints and preferred opportunities.
 - JSON checkpoints and Markdown briefs are saved under ignored `data/project_research/`.
 - Resume with the same configuration and `--resume RUN_ID`.

@@ -23,7 +23,7 @@
 - `schemas.py`: shared dataclasses, structured output schemas and claim validation.
 - `codex_client.py`: local subprocess calls, model selection, timeouts, tool isolation and usage records.
 - `prompts.py`: stage instructions and serialized input material.
-- `src/channels.py` and `src/collectors/`: lazy community and optional background sources.
+- `src/channels.py` and `src/collectors/`: Hacker News by default; Reddit and GitHub Trending by opt-in.
 - `api_retry.py`, `signal_normalization.py`, `research_io.py`: HTTP retries, normalization and atomic I/O.
 
 The model cannot change Python's final decision rules. Quotation and identity checks establish traceability; they do not automatically establish semantic support or market demand.
@@ -38,4 +38,4 @@ Project knowledge is read only from `knowledge_base/project/`. The root `Project
 
 ## Standalone distribution
 
-There is no HTTP model gateway, academic idea-generation entry point, Forge, experiment runtime, scheduler or dashboard. Academic/media collectors remain optional inputs to project research and do not count as community demand.
+There is no HTTP model gateway, academic idea-generation entry point, Forge, experiment runtime, scheduler or dashboard. Bulk academic/media collectors have been removed. Source selection now favors evidence related to the user's idea; the next additions are described in [source strategy](docs/PROJECT_SOURCE_STRATEGY.md).

@@ -77,10 +77,17 @@ signal, 3 competitor pages per idea, 6,000 characters per document, and 30 docum
 selection are used. Adjust `max_comments`, `max_competitor_pages`, `max_document_chars`,
 `max_evidence_documents` and the main stage limits to control collection and model workload.
 
-Sources default to GitHub Trending, Hacker News and Reddit. `subreddits` and `queries` are configurable.
-Install `requirements-sources.txt` before enabling optional academic/media sources; they do not count as community
-demand evidence. Set `required_sources` explicitly to fail a run when a selected source fails.
+The default source is Hacker News. Supply `--topic` or nonempty `queries` describing your idea; no generic
+search terms are added automatically. Explicit `queries` are additional searches, so keep them relevant.
+Reddit and GitHub Trending are opt-in through `--sources` or JSON settings. Reddit was blocked during the
+2026-09-14 check; Trending is useful for discovery but cannot establish demand. Academic/media collectors and
+`requirements-sources.txt` have been removed. Old `academic: false` / `media: false` settings are accepted;
+enabling either removed group fails with a migration error. Set `required_sources` explicitly to fail a run when a selected source fails.
 If every enabled source fails, the run fails rather than claiming successful empty research.
+
+These changed defaults/configuration fields require a new run; old artifacts remain readable, but their
+configuration fingerprint will not match for resume. See [source strategy](PROJECT_SOURCE_STRATEGY.md) for
+proposed additions. A full existing-idea validation mode and user-supplied evidence import are not implemented yet.
 
 ## Project Profile
 
@@ -98,9 +105,9 @@ that directory. Review selected knowledge files for private information before p
 ## Commands / 运行与恢复
 
 ```powershell
-.\.venv\Scripts\python.exe project_research.py
+.\.venv\Scripts\python.exe project_research.py --topic "agent context version history"
 .\.venv\Scripts\python.exe project_research.py --topic "MCP observability" --top-k 5 --no-red-team
-.\.venv\Scripts\python.exe project_research.py --sources github,hackernews --lookback-days 7
+.\.venv\Scripts\python.exe project_research.py --topic "MCP observability" --sources github,hackernews --lookback-days 7
 .\.venv\Scripts\python.exe project_research.py --config path/to/project-config.json
 .\.venv\Scripts\python.exe project_research.py --resume RUN_ID
 ```

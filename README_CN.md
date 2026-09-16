@@ -25,8 +25,9 @@ Linux 使用 `python3.12 -m venv .venv`，解释器路径改为 `.venv/bin/pytho
 
 社区信号 → 主题筛选 → 问题提炼与去重 → 创意 → 证据验证 → 评分 → Red Team → GO / HOLD / REJECT 报告。
 
-- 默认采集 Hacker News、Reddit 和 GitHub Trending。
-- 学术与媒体来源可作为背景材料，启用前安装 `requirements-sources.txt`。
+- 默认只采集 Hacker News，使用你提供的 `--topic` 和可选的 `queries` 定向搜索；未提供时会提示补充。
+- Reddit 和 GitHub Trending 需手动开启；批量学术、资讯与博客采集器已移除。
+- 数据源取舍及围绕已有想法的后续开发顺序见[数据源策略](docs/PROJECT_SOURCE_STRATEGY.md)。
 - 用 [ProjectProfile.md](ProjectProfile.md) 描述自己的能力、约束和目标用户。
 - 研究结果保存在 `data/project_research/`，包含 JSON、Markdown 和阶段检查点。
 - 使用相同配置并追加 `--resume RUN_ID` 恢复；完成阶段会跳过。

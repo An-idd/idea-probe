@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from project_research.config import load_config
+from project_research.config import load_config, load_project_config
 
 
 def write(path, settings):
@@ -27,6 +27,13 @@ def test_legacy_local_project_block_and_new_local_precedence(tmp_path):
     assert load_config(tmp_path).topic == "legacy"
     write(tmp_path / "config/project.local.json", {"topic": "new"})
     assert load_config(tmp_path).topic == "new"
+
+
+def test_removed_sources_cannot_be_silently_enabled():
+    assert load_project_config({"sources": {"academic": False, "media": False}}).sources.hackernews
+    for source in ("academic", "media"):
+        with pytest.raises(ValueError, match="has been removed"):
+            load_project_config({"sources": {source: True}})
 
 
 @pytest.mark.parametrize("value", [[], {"project_research": []}, {"project_research": {"top_k": "bad"}}])

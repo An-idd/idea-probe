@@ -37,11 +37,9 @@ class Thresholds:
 
 @dataclass
 class Sources:
-    github: bool = True
+    github: bool = False
     hackernews: bool = True
-    reddit: bool = True
-    academic: bool = False
-    media: bool = False
+    reddit: bool = False
 
 
 @dataclass
@@ -58,7 +56,7 @@ class ProjectConfig:
     profile_path: str = ""
     required_sources: list[str] = field(default_factory=list)
     subreddits: list[str] = field(default_factory=lambda: ["LocalLLaMA", "selfhosted", "opensource", "Python"])
-    queries: list[str] = field(default_factory=lambda: ["developer tools", "workaround", "alternative", "Ask HN"])
+    queries: list[str] = field(default_factory=list)
     knowledge_directions: list[str] = field(default_factory=list)
     max_comments: int = 5
     max_competitor_pages: int = 3
@@ -92,13 +90,21 @@ class ProjectConfig:
             raise ValueError("Model names cannot be empty")
         if any(not re.fullmatch(r"[A-Za-z0-9_]+", name) for name in self.subreddits):
             raise ValueError("Invalid subreddit name")
-        if set(self.required_sources) - {"github", "hackernews", "reddit", "academic", "media"}:
+        if set(self.required_sources) - {"github", "hackernews", "reddit"}:
             raise ValueError("Unknown required source")
         if any(not getattr(self.sources, name) for name in self.required_sources):
             raise ValueError("A required source must be enabled")
 
 
 def load_project_config(raw: dict) -> ProjectConfig:
+    # Accept old disabled flags, but never silently ignore an enabled removed source.
+    if isinstance(raw.get("sources"), dict):
+        sources = dict(raw["sources"])
+        for name in ("academic", "media"):
+            if name in sources:
+                if sources.pop(name) is not False:
+                    raise ValueError(f"Source {name} has been removed; remove it from sources")
+        raw = {**raw, "sources": sources}
     config = decode(ProjectConfig, raw)
     config.validate()
     return config

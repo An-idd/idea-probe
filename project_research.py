@@ -22,7 +22,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--topic")
     parser.add_argument("--top-k", type=int)
     parser.add_argument("--lookback-days", type=int)
-    parser.add_argument("--sources", help="Comma-separated github,hackernews,reddit,academic,media")
+    parser.add_argument("--sources", help="Comma-separated github,hackernews,reddit (default: hackernews)")
     parser.add_argument("--no-red-team", action="store_true")
     parser.add_argument("--resume", help="Run ID printed by an earlier run; use the same config/CLI options")
     parser.add_argument("--profile", help="Project profile path")
@@ -40,9 +40,9 @@ def main(argv: list[str] | None = None) -> int:
         config = replace(config, **overrides)
         if args.sources is not None:
             names = set(args.sources.split(","))
-            known = {"github", "hackernews", "reddit", "academic", "media"}
+            known = {"github", "hackernews", "reddit"}
             if not names or names - known:
-                raise ValueError("Unknown/empty --sources; use github,hackernews,reddit,academic,media")
+                raise ValueError("Unknown/empty --sources; use github,hackernews,reddit")
             config.sources = type(config.sources)(**{name: name in names for name in known})
         if args.no_red_team:
             config.red_team.enabled = False

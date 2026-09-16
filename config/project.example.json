@@ -17,12 +17,7 @@
       "opensource",
       "Python"
     ],
-    "queries": [
-      "developer tools",
-      "workaround",
-      "alternative",
-      "Ask HN"
-    ],
+    "queries": [],
     "knowledge_directions": [],
     "max_comments": 5,
     "max_competitor_pages": 3,
@@ -51,11 +46,9 @@
       "hold": 60
     },
     "sources": {
-      "github": true,
+      "github": false,
       "hackernews": true,
-      "reddit": true,
-      "academic": false,
-      "media": false
+      "reddit": false
     }
   }
 }

@@ -109,11 +109,12 @@ def enrich_signal(signal: Signal, config: ProjectConfig) -> Signal:
 
 def project_channels(config: ProjectConfig) -> list[channels.Channel]:
     result = []
-    queries = ([config.topic] if config.topic else []) + config.queries
+    queries = list(dict.fromkeys(q.strip() for q in [config.topic, *config.queries] if q.strip()))
+    if not queries:
+        raise ValueError("Provide --topic or queries describing your idea before collecting evidence")
     for channel in channels.collection_channels():
         source = "github" if channel.key == "github_trending" else channel.key
-        group = channel.kind if channel.kind in ("academic", "media") else source
-        if not getattr(config.sources, group, False):
+        if not getattr(config.sources, source, False):
             continue
         fetch = channel.fetch
         if source == "reddit":
@@ -129,13 +130,13 @@ def project_channels(config: ProjectConfig) -> list[channels.Channel]:
             def fetch(module, window):
                 return module.collect_trending(since=channels.GITHUB_SINCE.get(window.time_filter, "monthly"),
                                                keywords=None, strict=True)
-        result.append(replace(channel, fetch=fetch, required=group in config.required_sources))
+        result.append(replace(channel, fetch=fetch, required=source in config.required_sources))
     return result
 
 
 def collect_signals(config: ProjectConfig) -> list[Signal]:
     window_name = "week" if config.lookback_days <= 7 else "month" if config.lookback_days <= 30 else "year"
-    window = channels.Window(window_name, config.lookback_days, config.lookback_days, config.lookback_days)
+    window = channels.Window(window_name, config.lookback_days)
     cutoff = datetime.now(timezone.utc) - timedelta(days=config.lookback_days)
     batches = []
     healthy = 0
